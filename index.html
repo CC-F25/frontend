@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Placeholder</title>
+    
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load React and ReactDOM (The Core Libraries) -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Load Babel (Allows the browser to process JSX directly) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+      html, body, #root {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+</head>
+<body>
+    <!-- The mounting point for the React application -->
+    <div id="root"></div>
+
+    <!-- React Component and Rendering Logic -->
+    <script type="text/babel">
+        // Use React and Tailwind classes defined in the CDNs
+
+        const { useState } = React;
+
+        const App = () => {
+            const [appName] = useState("Microservice Frontend Placeholder");
+
+            return (
+                <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+                    
+                    {/* Main Container Card */}
+                    <div className="w-full max-w-lg bg-white shadow-2xl rounded-xl p-10 transition-transform transform hover:scale-[1.02] duration-300">
+                        
+                        {/* Header */}
+                        <header className="text-center mb-6">
+                            <h1 className="text-5xl font-extrabold text-indigo-700 tracking-tighter">
+                                Hello World!
+                            </h1>
+                        </header>
+
+                        {/* Content Section */}
+                        <section className="text-center">
+                            <p className="text-lg text-gray-600 font-medium mt-4">
+                                This is the placeholder.
+                            </p>
+                        </section>
+                        
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the App component into the #root element
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>
