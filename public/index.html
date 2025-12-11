@@ -1,139 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Cloud Computing Apartment Finder</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { font-family: sans-serif; max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
-    h1, h2 { margin-bottom: 0.3rem; }
-    section { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1.5rem; border-radius: 6px; }
-    label { display: block; margin-top: 0.5rem; }
-    input, select { width: 100%; padding: 0.4rem; margin-top: 0.2rem; box-sizing: border-box; }
-    button { margin-top: 0.8rem; padding: 0.5rem 1rem; cursor: pointer; }
-    button:hover { opacity: 0.9; }
-    .card { border: 1px solid #ccc; padding: 0.75rem; margin-top: 0.75rem; border-radius: 4px; }
-    .small { font-size: 0.85rem; color: #555; }
-    #results { margin-top: 0.5rem; }
-    .row { display: flex; gap: 1rem; flex-wrap: wrap; }
-    .row > div { flex: 1 1 250px; }
-    .status { font-size: 0.9rem; margin-top: 0.5rem; min-height: 1.2em; }
-    code { background: #f3f3f3; padding: 0 0.2rem; border-radius: 3px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - Apartment Booking</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Apartment Search – Cloud Computing Project</h1>
-  <p class="small">
-    This page interacts with three microservices:
-    <strong>Users</strong>, <strong>Preferences</strong>, and <strong>Listings</strong>.
-  </p>
+    <div class="container">
+        <h1>Create Your Account</h1>
+        <p class="subtitle">Find your perfect apartment with personalized preferences</p>
 
-  <!-- SECTION 0: Create User (Users microservice) -->
-  <section>
-    <h2>0. Create User (Users Microservice)</h2>
-    <p class="small">
-      Calls <code>POST /users</code> on the Users microservice. The returned user ID is automatically
-      used in the Preferences and Search sections below.
-    </p>
+        <form id="signupForm">
+            <!-- Basic Information -->
+            <div class="form-group">
+                <label for="name">Full Name <span class="required">*</span></label>
+                <input type="text" id="name" name="name" required placeholder="John Doe">
+            </div>
 
-    <form id="userForm">
-      <div class="row">
-        <div>
-          <label>
-            Name
-            <input type="text" name="name" placeholder="e.g. John Smith" required>
-          </label>
-        </div>
-        <div>
-          <label>
-            Email
-            <input type="email" name="email" placeholder="e.g. john.smith@gmail.com" required>
-          </label>
-        </div>
-      </div>
+            <div class="form-group">
+                <label for="email">Email <span class="required">*</span></label>
+                <input type="email" id="email" name="email" required placeholder="john@example.com">
+            </div>
 
-      <!-- Optional: other fields from your UserCreate model could go here -->
+            <div class="form-group">
+                <label for="phone">Phone Number <span class="required">*</span></label>
+                <input type="tel" id="phone" name="phone" required placeholder="+1 (555) 123-4567">
+                <p class="helper-text">Include country code</p>
+            </div>
 
-      <button type="submit">Create User</button>
-      <div id="userStatus" class="status"></div>
-    </form>
+            <div class="form-group">
+                <label for="housingPreference">Housing Preference <span class="required">*</span></label>
+                <select id="housingPreference" name="housingPreference" required>
+                    <option value="">Select...</option>
+                    <option value="apartment">Apartment</option>
+                    <option value="single family home">Single Family Home</option>
+                    <option value="townhouse">Townhouse</option>
+                    <option value="condo">Condo</option>
+                    <option value="studio">Studio</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
 
-    <p class="small">
-      Current User ID in use:
-      <code id="currentUserId">(none yet)</code>
-    </p>
-  </section>
+            <!-- Preferences Section -->
+            <div class="preferences-section">
+                <h2>Apartment Preferences</h2>
 
-  <!-- SECTION 1: Save Preferences (Preferences microservice) -->
-  <section>
-    <h2>1. Save Housing Preferences (Preferences Microservice)</h2>
-    <p class="small">
-      Calls <code>POST /</code> on the Preferences microservice to create or update preferences for the selected user.
-    </p>
+                <div class="form-group">
+                    <label for="maxBudget">Maximum Budget ($/month) <span class="required">*</span></label>
+                    <input type="number" id="maxBudget" name="maxBudget" required placeholder="2000" min="0" step="100">
+                </div>
 
-    <form id="prefsForm">
-      <label>
-        User ID (UUID)
-        <input type="text" name="userId" id="prefsUserId" placeholder="Will auto-fill after creating a user" required>
-      </label>
+                <div class="input-group">
+                    <div class="form-group">
+                        <label for="minSize">Min Size (sq ft) <span class="required">*</span></label>
+                        <input type="number" id="minSize" name="minSize" required placeholder="500" min="0" step="50">
+                    </div>
 
-      <div class="row">
-        <div>
-          <label>
-            Max Budget ($)
-            <input type="number" name="maxBudget" min="0" required>
-          </label>
-        </div>
-        <div>
-          <label>
-            Min Size (sq ft)
-            <input type="number" name="minSize" min="0" required>
-          </label>
-        </div>
-      </div>
+                    <div class="form-group">
+                        <label for="rooms">Bedrooms <span class="required">*</span></label>
+                        <select id="rooms" name="rooms" required>
+                            <option value="">Select...</option>
+                            <option value="1">Studio</option>
+                            <option value="1">1 Bedroom</option>
+                            <option value="2">2 Bedrooms</option>
+                            <option value="3">3 Bedrooms</option>
+                            <option value="4">4+ Bedrooms</option>
+                        </select>
+                    </div>
+                </div>
 
-      <div class="row">
-        <div>
-          <label>
-            Location Area / City
-            <input type="text" name="locationArea" placeholder="e.g. Morningside Heights" required>
-          </label>
-        </div>
-        <div>
-          <label>
-            Rooms (bedrooms)
-            <input type="number" name="rooms" min="0" required>
-          </label>
-        </div>
-      </div>
+                <div class="form-group">
+                    <label for="locationArea">Preferred Location <span class="required">*</span></label>
+                    <input type="text" id="locationArea" name="locationArea" required placeholder="Downtown, Brooklyn, etc.">
+                </div>
+            </div>
 
-      <button type="submit">Save Preferences</button>
-      <div id="prefsStatus" class="status"></div>
-    </form>
-  </section>
+            <button type="submit" class="button" id="submitBtn">Create Account</button>
+        </form>
 
-  <!-- SECTION 2: Search Listings using Preferences (Listings + Preferences) -->
-  <section>
-    <h2>2. Search Apartments Using Saved Preferences</h2>
-    <p class="small">
-      This uses <strong>Preferences MS</strong> (<code>GET /{userId}</code>) to load preferences
-      and then <strong>Listings MS</strong> (<code>GET /listings</code>) to find apartments.
-      This simulates what your composite microservice will eventually do.
-    </p>
+        <div id="message" class="message"></div>
+    </div>
 
-    <form id="searchForm">
-      <label>
-        User ID (UUID)
-        <input type="text" name="userId" id="searchUserId" placeholder="Same as above" required>
-      </label>
-
-      <button type="submit">Search Using My Preferences</button>
-    </form>
-
-    <h3>Results</h3>
-    <div id="results"></div>
-  </section>
-
-  <script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

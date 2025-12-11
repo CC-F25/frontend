@@ -1,170 +1,153 @@
-// =================== CONFIG: CHANGE THESE ===================
-// Replace with the actual external IP/host + port of each microservice.
-const USERS_BASE    = "http://USERS_VM_IP:8000";     // Users microservice
-const PREFS_BASE    = "http://PREFERENCES_VM_IP:8080"; // Preferences microservice
-const LISTINGS_BASE = "http://35.224.251.138:8000"; // Apt Listings microservice
-// ===========================================================
+// API Configuration
+// TODO: Update these URLs with your actual deployed microservice endpoints
+const API_CONFIG = {
+    USERS_API: 'https://users-microservice-258517926293.us-central1.run.app/users',
+    PREFERENCES_API: 'http://34.111.137.28:8002/user-preferences'  // Update this!
+};
 
-// Grab DOM elements
-const userForm        = document.getElementById("userForm");
-const userStatusEl    = document.getElementById("userStatus");
-const currentUserIdEl = document.getElementById("currentUserId");
+// DOM Elements
+const form = document.getElementById('signupForm');
+const messageDiv = document.getElementById('message');
+const submitBtn = document.getElementById('submitBtn');
 
-const prefsForm       = document.getElementById("prefsForm");
-const prefsStatusEl   = document.getElementById("prefsStatus");
-const prefsUserIdEl   = document.getElementById("prefsUserId");
-
-const searchForm      = document.getElementById("searchForm");
-const searchUserIdEl  = document.getElementById("searchUserId");
-const resultsDiv      = document.getElementById("results");
-
-// Helper: keep the "current user ID" synced across sections
-function setCurrentUserId(id) {
-  currentUserIdEl.textContent = id;
-  prefsUserIdEl.value = id;
-  searchUserIdEl.value = id;
+/**
+ * Display a message to the user
+ * @param {string} text - Message text to display
+ * @param {string} type - Message type: 'success' or 'error'
+ */
+function showMessage(text, type) {
+    messageDiv.textContent = text;
+    messageDiv.className = `message ${type}`;
+    messageDiv.style.display = 'block';
+    
+    // Auto-hide message after 5 seconds
+    setTimeout(() => {
+        messageDiv.style.display = 'none';
+    }, 5000);
 }
 
-// ------------------- 0. Create User (Users MS) -------------------
-userForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  userStatusEl.textContent = "Creating user…";
-
-  const formData = new FormData(userForm);
-  const payload = {
-    name: formData.get("name"),
-    email: formData.get("email"),
-    // If your UserCreate model has more fields, add them here
-  };
-
-  try {
-    const resp = await fetch(`${USERS_BASE}/users`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+/**
+ * Create a new user account
+ * @param {Object} userData - User information (name, email, phone)
+ * @returns {Promise<Object>} Created user object with ID
+ */
+async function createUser(userData) {
+    const response = await fetch(API_CONFIG.USERS_API, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: userData.name,
+            email: userData.email,
+            phone_number: userData.phone,
+            housing_preference: userData.housingPreference,
+            listing_group: "other"  // Default to "other" since we don't collect this
+        })
     });
 
-    if (!resp.ok) {
-      const text = await resp.text();
-      throw new Error(`Error ${resp.status}: ${text}`);
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Failed to create user');
     }
 
-    const user = await resp.json();
-    console.log("User created:", user);
-    userStatusEl.innerHTML = `User created ✅<br>UUID: <code>${user.id}</code>`;
-    setCurrentUserId(user.id);
-  } catch (err) {
-    console.error(err);
-    userStatusEl.textContent = `Error creating user: ${err.message}`;
-  }
-});
+    return response.json();
+}
 
-// ------------------- 1. Save / Update Preferences (Prefs MS) -------------------
-prefsForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  prefsStatusEl.textContent = "Saving preferences…";
-
-  const formData = new FormData(prefsForm);
-  const payload = {
-    user_id: formData.get("userId"),
-    max_budget: Number(formData.get("maxBudget")),
-    min_size: Number(formData.get("minSize")),
-    location_area: formData.get("locationArea"),
-    rooms: Number(formData.get("rooms")),
-  };
-
-  try {
-    const resp = await fetch(`${PREFS_BASE}/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+/**
+ * Create user preferences
+ * @param {string} userId - User ID from the created user
+ * @param {Object} preferencesData - Apartment preferences
+ * @returns {Promise<Object>} Created preferences object
+ */
+async function createPreferences(userId, preferencesData) {
+    const response = await fetch(API_CONFIG.PREFERENCES_API, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            user_id: userId,
+            ...preferencesData
+        })
     });
 
-    if (!resp.ok) {
-      const text = await resp.text();
-      throw new Error(`Error ${resp.status}: ${text}`);
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Failed to create preferences');
     }
 
-    const data = await resp.json();
-    console.log("Preferences saved:", data);
-    prefsStatusEl.textContent = "Preferences saved successfully ✅";
-  } catch (err) {
-    console.error(err);
-    prefsStatusEl.textContent = `Error saving preferences: ${err.message}`;
-  }
-});
+    return response.json();
+}
 
-// ------------------- 2. Search Using Preferences (Prefs + Listings MS) -------------------
-searchForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  resultsDiv.innerHTML = "Searching with preferences…";
+/**
+ * Get form data and structure it for the API
+ * @returns {Object} Object containing userData and preferencesData
+ */
+function getFormData() {
+    return {
+        userData: {
+            name: document.getElementById('name').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            housingPreference: document.getElementById('housingPreference').value
+        },
+        preferencesData: {
+            max_budget: parseFloat(document.getElementById('maxBudget').value),
+            min_size: parseFloat(document.getElementById('minSize').value),
+            location_area: document.getElementById('locationArea').value.trim(),
+            rooms: parseInt(document.getElementById('rooms').value)
+        }
+    };
+}
 
-  const formData = new FormData(searchForm);
-  const userId = formData.get("userId");
+/**
+ * Handle form submission
+ * @param {Event} e - Form submit event
+ */
+async function handleSubmit(e) {
+    e.preventDefault();
+    
+    // Disable button to prevent double submission
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating Account...';
 
-  try {
-    // 1) Load preferences for this user
-    const prefsResp = await fetch(`${PREFS_BASE}/${userId}`);
-    if (!prefsResp.ok) {
-      const text = await prefsResp.text();
-      throw new Error(`Could not load preferences (status ${prefsResp.status}): ${text}`);
+    try {
+        const { userData, preferencesData } = getFormData();
+
+        // Step 1: Create user account
+        console.log('Creating user account...');
+        const user = await createUser(userData);
+        console.log('User created:', user);
+
+        // Step 2: Create preferences for the user
+        console.log('Creating user preferences...');
+        const preferences = await createPreferences(user.id, preferencesData);
+        console.log('Preferences created:', preferences);
+
+        // Success! Show success message and reset form
+        showMessage('Account created successfully! Welcome aboard! 🎉', 'success');
+        form.reset();
+        
+        // Optional: Redirect to another page after successful signup
+        // Uncomment the lines below if you want to redirect
+        // setTimeout(() => {
+        //     window.location.href = '/home.html';
+        // }, 2000);
+
+    } catch (error) {
+        console.error('Error during signup:', error);
+        showMessage(`Error: ${error.message}`, 'error');
+    } finally {
+        // Re-enable the submit button
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
     }
-    const prefs = await prefsResp.json();
-    console.log("Loaded preferences:", prefs);
+}
 
-    // 2) Use preferences to query Listings MS
-    const params = new URLSearchParams();
-
-    // Map preference fields → query params expected by Listings MS
-    if (prefs.max_budget != null) params.append("max_rent", prefs.max_budget);
-    if (prefs.location_area)      params.append("city", prefs.location_area);
-    // Your listings service currently filters only on min_rent in code,
-    // but including max_rent & city in query params is fine; you can extend backend later.
-
-    const listingsResp = await fetch(`${LISTINGS_BASE}/listings?${params.toString()}`);
-    if (!listingsResp.ok) {
-      const text = await listingsResp.text();
-      throw new Error(`Error fetching listings (status ${listingsResp.status}): ${text}`);
-    }
-
-    const listings = await listingsResp.json();
-    console.log("Listings:", listings);
-    renderListings(listings, prefs);
-  } catch (err) {
-    console.error(err);
-    resultsDiv.innerHTML = `<p style="color:red;">${err.message}</p>`;
-  }
-});
-
-function renderListings(listings, prefs) {
-  if (!Array.isArray(listings) || listings.length === 0) {
-    resultsDiv.innerHTML = "<p>No matching apartments found.</p>";
-    return;
-  }
-
-  resultsDiv.innerHTML = "";
-
-  // Optional: show the preferences used
-  const prefsInfo = document.createElement("div");
-  prefsInfo.className = "small";
-  prefsInfo.innerHTML = `
-    <p><strong>Using preferences:</strong>
-       Max Budget = $${prefs.max_budget},
-       Rooms = ${prefs.rooms},
-       Area = ${prefs.location_area}</p>`;
-  resultsDiv.appendChild(prefsInfo);
-
-  listings.forEach((apt) => {
-    const card = document.createElement("div");
-    card.className = "card";
-
-    card.innerHTML = `
-      <strong>${apt.title || "Apartment"}</strong><br>
-      ${apt.address?.city || ""} ${apt.address?.state || ""}<br>
-      Rent: $${apt.monthly_rent} — ${apt.num_bedrooms ?? "?"} BR<br>
-      <span class="small">ID: ${apt.id}</span>
-    `;
-
-    resultsDiv.appendChild(card);
-  });
+// Add event listener when DOM is ready
+if (form) {
+    form.addEventListener('submit', handleSubmit);
+} else {
+    console.error('Sign up form not found!');
 }
