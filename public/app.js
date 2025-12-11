@@ -1,8 +1,7 @@
 // API Configuration
-// TODO: Update these URLs with your actual deployed microservice endpoints
 const API_CONFIG = {
     USERS_API: 'https://users-microservice-258517926293.us-central1.run.app/users',
-    PREFERENCES_API: 'http://34.111.137.28:8002/user-preferences'  // Update this!
+    PREFERENCES_API: 'https://YOUR_COMPOSITE_SERVICE_URL/user-preferences'  // Update this!
 };
 
 // DOM Elements
@@ -41,8 +40,8 @@ async function createUser(userData) {
             name: userData.name,
             email: userData.email,
             phone_number: userData.phone,
-            housing_preference: userData.housingPreference,
-            listing_group: "other"  // Default to "other" since we don't collect this
+            housing_preference: "apartment",  // Default value
+            listing_group: "other"  // Default value
         })
     });
 
@@ -85,18 +84,35 @@ async function createPreferences(userId, preferencesData) {
  * @returns {Object} Object containing userData and preferencesData
  */
 function getFormData() {
+    // Get elements with error checking
+    const nameEl = document.getElementById('name');
+    const emailEl = document.getElementById('email');
+    const phoneEl = document.getElementById('phone');
+    const maxBudgetEl = document.getElementById('maxBudget');
+    const minSizeEl = document.getElementById('minSize');
+    const locationAreaEl = document.getElementById('locationArea');
+    const roomsEl = document.getElementById('rooms');
+
+    // Check for missing fields
+    if (!nameEl) throw new Error('Name field not found');
+    if (!emailEl) throw new Error('Email field not found');
+    if (!phoneEl) throw new Error('Phone field not found');
+    if (!maxBudgetEl) throw new Error('Max Budget field not found');
+    if (!minSizeEl) throw new Error('Min Size field not found');
+    if (!locationAreaEl) throw new Error('Location Area field not found');
+    if (!roomsEl) throw new Error('Rooms field not found');
+
     return {
         userData: {
-            name: document.getElementById('name').value.trim(),
-            email: document.getElementById('email').value.trim(),
-            phone: document.getElementById('phone').value.trim(),
-            housingPreference: document.getElementById('housingPreference').value
+            name: nameEl.value.trim(),
+            email: emailEl.value.trim(),
+            phone: phoneEl.value.trim()
         },
         preferencesData: {
-            max_budget: parseFloat(document.getElementById('maxBudget').value),
-            min_size: parseFloat(document.getElementById('minSize').value),
-            location_area: document.getElementById('locationArea').value.trim(),
-            rooms: parseInt(document.getElementById('rooms').value)
+            max_budget: parseFloat(maxBudgetEl.value),
+            min_size: parseFloat(minSizeEl.value),
+            location_area: locationAreaEl.value.trim(),
+            rooms: parseInt(roomsEl.value)
         }
     };
 }
@@ -119,6 +135,11 @@ async function handleSubmit(e) {
         console.log('Creating user account...');
         const user = await createUser(userData);
         console.log('User created:', user);
+
+        // TEMPORARILY SKIP PREFERENCES FOR TESTING
+        showMessage('User created successfully! User ID: ' + user.id, 'success');
+        form.reset();
+        return; // Exit early to test just user creation
 
         // Step 2: Create preferences for the user
         console.log('Creating user preferences...');

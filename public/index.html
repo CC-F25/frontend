@@ -29,39 +29,26 @@
                 <p class="helper-text">Include country code</p>
             </div>
 
-            <div class="form-group">
-                <label for="housingPreference">Housing Preference <span class="required">*</span></label>
-                <select id="housingPreference" name="housingPreference" required>
-                    <option value="">Select...</option>
-                    <option value="apartment">Apartment</option>
-                    <option value="single family home">Single Family Home</option>
-                    <option value="townhouse">Townhouse</option>
-                    <option value="condo">Condo</option>
-                    <option value="studio">Studio</option>
-                    <option value="other">Other</option>
-                </select>
-            </div>
-
             <!-- Preferences Section -->
             <div class="preferences-section">
                 <h2>Apartment Preferences</h2>
 
                 <div class="form-group">
                     <label for="maxBudget">Maximum Budget ($/month) <span class="required">*</span></label>
-                    <input type="number" id="maxBudget" name="maxBudget" required placeholder="2000" min="0" step="100">
+                    <input type="number" id="maxBudget" name="maxBudget" required placeholder="2000" min="0">
                 </div>
 
                 <div class="input-group">
                     <div class="form-group">
                         <label for="minSize">Min Size (sq ft) <span class="required">*</span></label>
-                        <input type="number" id="minSize" name="minSize" required placeholder="500" min="0" step="50">
+                        <input type="number" id="minSize" name="minSize" required placeholder="500" min="0">
                     </div>
 
                     <div class="form-group">
                         <label for="rooms">Bedrooms <span class="required">*</span></label>
                         <select id="rooms" name="rooms" required>
                             <option value="">Select...</option>
-                            <option value="1">Studio</option>
+                            <option value="0">Studio</option>
                             <option value="1">1 Bedroom</option>
                             <option value="2">2 Bedrooms</option>
                             <option value="3">3 Bedrooms</option>
@@ -82,6 +69,6 @@
         <div id="message" class="message"></div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>
