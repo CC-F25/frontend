@@ -1,7 +1,7 @@
 // API Configuration
 const API_CONFIG = {
     USERS_API: 'https://users-microservice-258517926293.us-central1.run.app/users',
-    PREFERENCES_API: 'https://YOUR_COMPOSITE_SERVICE_URL/user-preferences'  // Update this!
+    PREFERENCES_API: 'https://preferences-proxy-258517926293.us-central1.run.app/user-preferences'
 };
 
 // DOM Elements
@@ -111,7 +111,7 @@ function getFormData() {
         preferencesData: {
             max_budget: parseFloat(maxBudgetEl.value),
             min_size: parseFloat(minSizeEl.value),
-            location_area: locationAreaEl.value.trim(),
+            location_area: [locationAreaEl.value.trim()],
             rooms: parseInt(roomsEl.value)
         }
     };
@@ -136,22 +136,16 @@ async function handleSubmit(e) {
         const user = await createUser(userData);
         console.log('User created:', user);
 
-        // TEMPORARILY SKIP PREFERENCES FOR TESTING
-        showMessage('User created successfully! User ID: ' + user.id, 'success');
-        form.reset();
-        return; // Exit early to test just user creation
 
         // Step 2: Create preferences for the user
         console.log('Creating user preferences...');
         const preferences = await createPreferences(user.id, preferencesData);
         console.log('Preferences created:', preferences);
 
-        // Success! Show success message and reset form
         showMessage('Account created successfully! Welcome aboard! 🎉', 'success');
         form.reset();
         
-        // Optional: Redirect to another page after successful signup
-        // Uncomment the lines below if you want to redirect
+        // Redirect to another page after successful signup
         // setTimeout(() => {
         //     window.location.href = '/home.html';
         // }, 2000);
