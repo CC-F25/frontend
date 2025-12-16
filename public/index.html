@@ -1,74 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account - Apartment Booking</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
-    <div class="container">
-        <h1>Create Your Account</h1>
-        <p class="subtitle">Find your perfect apartment with personalized preferences</p>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-brand">Apartments</div>
+        <div class="nav-links">
+            <button class="nav-item active" onclick="showSection('home')">Sign Up</button>
+            <button class="nav-item" onclick="showSection('listings')">Listings</button>
+            <button class="nav-item" onclick="showSection('bookings')">My Bookings</button>
+        </div>
+        <div class="nav-controls">
+            <label class="toggle-switch">
+                <input type="checkbox" id="localModeToggle" onchange="toggleLocalMode()">
+                <span class="slider"></span>
+            </label>
+            <span class="toggle-label">Local Mode</span>
+        </div>
+    </nav>
 
-        <form id="signupForm">
-            <!-- Basic Information -->
-            <div class="form-group">
-                <label for="name">Full Name <span class="required">*</span></label>
-                <input type="text" id="name" name="name" required placeholder="John Doe">
-            </div>
+    <!-- HOME SECTION (Signup) -->
+    <div id="home-section" class="section active">
+        <div class="container">
+            <h1>Create Your Account</h1>
+            <p class="subtitle">Find your perfect apartment with personalized preferences</p>
 
-            <div class="form-group">
-                <label for="email">Email <span class="required">*</span></label>
-                <input type="email" id="email" name="email" required placeholder="john@example.com">
-            </div>
-
-            <div class="form-group">
-                <label for="phone">Phone Number <span class="required">*</span></label>
-                <input type="tel" id="phone" name="phone" required placeholder="+1 (555) 123-4567">
-                <p class="helper-text">Include country code</p>
-            </div>
-
-            <!-- Preferences Section -->
-            <div class="preferences-section">
-                <h2>Apartment Preferences</h2>
-
+            <form id="signupForm">
+                <!-- Basic Information -->
                 <div class="form-group">
-                    <label for="maxBudget">Maximum Budget ($/month) <span class="required">*</span></label>
-                    <input type="number" id="maxBudget" name="maxBudget" required placeholder="2000" min="0">
+                    <label for="name">Full Name <span class="required">*</span></label>
+                    <input type="text" id="name" name="name" required placeholder="Enter your name">
                 </div>
 
+                <div class="form-group">
+                    <label for="email">Email <span class="required">*</span></label>
+                    <input type="email" id="email" name="email" required placeholder="email@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number <span class="required">*</span></label>
+                    <input type="tel" id="phone" name="phone" required placeholder="+1 (555) 123-4567">
+                    <p class="helper-text">Include country code</p>
+                </div>
+
+                <!-- Preferences Section -->
+                <div class="preferences-section">
+                    <h2>Apartment Preferences</h2>
+
+                    <div class="form-group">
+                        <label for="maxBudget">Maximum Budget ($/month) <span class="required">*</span></label>
+                        <input type="number" id="maxBudget" name="maxBudget" required placeholder="2000" min="0">
+                    </div>
+
+                    <div class="input-group">
+                        <div class="form-group">
+                            <label for="minSize">Min Size (sq ft) <span class="required">*</span></label>
+                            <input type="number" id="minSize" name="minSize" required placeholder="500" min="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="rooms">Bedrooms <span class="required">*</span></label>
+                            <select id="rooms" name="rooms" required>
+                                <option value="">Select...</option>
+                                <option value="0">Studio</option>
+                                <option value="1">1 Bedroom</option>
+                                <option value="2">2 Bedrooms</option>
+                                <option value="3">3 Bedrooms</option>
+                                <option value="4">4+ Bedrooms</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="locationArea">Preferred Location <span class="required">*</span></label>
+                        <input type="text" id="locationArea" name="locationArea" required
+                            placeholder="Downtown, Brooklyn, etc.">
+                    </div>
+                </div>
+
+                <button type="submit" class="button" id="submitBtn">Create Account</button>
+            </form>
+
+            <div id="message" class="message"></div>
+        </div>
+    </div>
+
+    <!-- LISTINGS SECTION -->
+    <div id="listings-section" class="section">
+        <div class="container wide-container">
+            <h1>Available Apartments</h1>
+            <p class="subtitle">Browse the latest listings</p>
+
+            <div class="filters">
+                <input type="number" id="filter-min-rent" placeholder="Min Rent">
+                <input type="number" id="filter-max-rent" placeholder="Max Rent">
+                <button class="button small-btn" onclick="fetchListings()">Search</button>
+            </div>
+
+            <div id="listings-grid" class="listings-grid">
+                <!-- Listings loaded here via JS -->
+                <p>Loading listings...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOOKINGS SECTION -->
+    <div id="bookings-section" class="section">
+        <div class="container">
+            <h1>My Bookings</h1>
+            <p class="subtitle">Your upcoming reservations</p>
+
+            <div class="form-group">
+                <label for="booking-user-id">Enter User ID to View Bookings:</label>
                 <div class="input-group">
-                    <div class="form-group">
-                        <label for="minSize">Min Size (sq ft) <span class="required">*</span></label>
-                        <input type="number" id="minSize" name="minSize" required placeholder="500" min="0">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="rooms">Bedrooms <span class="required">*</span></label>
-                        <select id="rooms" name="rooms" required>
-                            <option value="">Select...</option>
-                            <option value="0">Studio</option>
-                            <option value="1">1 Bedroom</option>
-                            <option value="2">2 Bedrooms</option>
-                            <option value="3">3 Bedrooms</option>
-                            <option value="4">4+ Bedrooms</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="locationArea">Preferred Location <span class="required">*</span></label>
-                    <input type="text" id="locationArea" name="locationArea" required placeholder="Downtown, Brooklyn, etc.">
+                    <input type="text" id="booking-user-id" placeholder="User UUID">
+                    <button class="button small-btn" onclick="loadUserBookings()">Load</button>
                 </div>
             </div>
 
-            <button type="submit" class="button" id="submitBtn">Create Account</button>
-        </form>
-
-        <div id="message" class="message"></div>
+            <div id="bookings-list" class="bookings-list">
+                <!-- Bookings loaded here via JS -->
+            </div>
+        </div>
     </div>
 
     <script src="app.js?v=4"></script>
 </body>
+
 </html>
