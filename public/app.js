@@ -1,47 +1,84 @@
 // API Configuration
-const API_CONFIG = {
-    USERS_API: 'https://users-microservice-258517926293.us-central1.run.app/users',
-    PREFERENCES_API: 'https://preferences-proxy-258517926293.us-central1.run.app/user-preferences'
+const CONFIG = {
+    CLOUD: {
+        USERS: 'https://users-microservice-258517926293.us-central1.run.app',
+        BOOKINGS: 'https://bookings-microservice-258517926293.us-central1.run.app',
+        LISTINGS: 'https://apartment-listings-258517926293.us-central1.run.app',
+        PREFERENCES: 'https://preferences-proxy-258517926293.us-central1.run.app'
+    },
+    LOCAL: {
+        USERS: 'http://localhost:8001',
+        BOOKINGS: 'http://localhost:8002',
+        PREFERENCES: 'http://localhost:8003',
+        LISTINGS: 'http://localhost:8004'
+    }
 };
+
+let currentMode = 'CLOUD'; // Default to Cloud
 
 // DOM Elements
 const form = document.getElementById('signupForm');
 const messageDiv = document.getElementById('message');
 const submitBtn = document.getElementById('submitBtn');
 
+// Navigation Logic
+function showSection(sectionId) {
+    // Hide all sections
+    document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+    // Show target section
+    document.getElementById(`${sectionId}-section`).classList.add('active');
+
+    // Activate nav item
+    const navIndex = ['home', 'listings', 'bookings'].indexOf(sectionId);
+    if (navIndex >= 0) {
+        document.querySelectorAll('.nav-item')[navIndex].classList.add('active');
+    }
+
+    // Auto-load data if needed
+    if (sectionId === 'listings') fetchListings();
+}
+
+function toggleLocalMode() {
+    const isChecked = document.getElementById('localModeToggle').checked;
+    currentMode = isChecked ? 'LOCAL' : 'CLOUD';
+    console.log(`Switched to ${currentMode} mode.`);
+
+    // Refresh current view
+    if (document.getElementById('listings-section').classList.contains('active')) {
+        fetchListings();
+    }
+}
+
+function getApiUrl(service) {
+    return CONFIG[currentMode][service];
+}
+
 /**
  * Display a message to the user
- * @param {string} text - Message text to display
- * @param {string} type - Message type: 'success' or 'error'
  */
 function showMessage(text, type) {
     messageDiv.textContent = text;
     messageDiv.className = `message ${type}`;
     messageDiv.style.display = 'block';
-    
-    // Auto-hide message after 5 seconds
-    setTimeout(() => {
-        messageDiv.style.display = 'none';
-    }, 5000);
+    setTimeout(() => { messageDiv.style.display = 'none'; }, 5000);
 }
 
-/**
- * Create a new user account
- * @param {Object} userData - User information (name, email, phone)
- * @returns {Promise<Object>} Created user object with ID
- */
+// ---------------------------------------------------------
+// USERS & PREFERENCES (Signup)
+// ---------------------------------------------------------
+
 async function createUser(userData) {
-    const response = await fetch(API_CONFIG.USERS_API, {
+    const response = await fetch(`${getApiUrl('USERS')}/users`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             name: userData.name,
             email: userData.email,
             phone_number: userData.phone,
-            housing_preference: "apartment",  // Default value
-            listing_group: "other"  // Default value
+            housing_preference: "apartment",
+            listing_group: "other"
         })
     });
 
@@ -49,22 +86,14 @@ async function createUser(userData) {
         const error = await response.json();
         throw new Error(error.detail || 'Failed to create user');
     }
-
     return response.json();
 }
 
-/**
- * Create user preferences
- * @param {string} userId - User ID from the created user
- * @param {Object} preferencesData - Apartment preferences
- * @returns {Promise<Object>} Created preferences object
- */
 async function createPreferences(userId, preferencesData) {
-    const response = await fetch(API_CONFIG.PREFERENCES_API, {
+    // Note: Preferences API logic varies slightly between services, adapting to standard
+    const response = await fetch(`${getApiUrl('PREFERENCES')}/preferences`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             user_id: userId,
             ...preferencesData
@@ -72,97 +101,205 @@ async function createPreferences(userId, preferencesData) {
     });
 
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to create preferences');
+        // Preferences failures shouldn't block the UI flow entirely, but alert needs to show
+        console.warn("Preferences creation failed");
     }
-
     return response.json();
 }
 
-/**
- * Get form data and structure it for the API
- * @returns {Object} Object containing userData and preferencesData
- */
-function getFormData() {
-    // Get elements with error checking
-    const nameEl = document.getElementById('name');
-    const emailEl = document.getElementById('email');
-    const phoneEl = document.getElementById('phone');
-    const maxBudgetEl = document.getElementById('maxBudget');
-    const minSizeEl = document.getElementById('minSize');
-    const locationAreaEl = document.getElementById('locationArea');
-    const roomsEl = document.getElementById('rooms');
-
-    // Check for missing fields
-    if (!nameEl) throw new Error('Name field not found');
-    if (!emailEl) throw new Error('Email field not found');
-    if (!phoneEl) throw new Error('Phone field not found');
-    if (!maxBudgetEl) throw new Error('Max Budget field not found');
-    if (!minSizeEl) throw new Error('Min Size field not found');
-    if (!locationAreaEl) throw new Error('Location Area field not found');
-    if (!roomsEl) throw new Error('Rooms field not found');
-
-    return {
-        userData: {
-            name: nameEl.value.trim(),
-            email: emailEl.value.trim(),
-            phone: phoneEl.value.trim()
-        },
-        preferencesData: {
-            max_budget: parseFloat(maxBudgetEl.value),
-            min_size: parseFloat(minSizeEl.value),
-            location_area: [locationAreaEl.value.trim()],
-            rooms: parseInt(roomsEl.value)
-        }
-    };
-}
-
-/**
- * Handle form submission
- * @param {Event} e - Form submit event
- */
 async function handleSubmit(e) {
     e.preventDefault();
-    
-    // Disable button to prevent double submission
     submitBtn.disabled = true;
     submitBtn.textContent = 'Creating Account...';
 
     try {
-        const { userData, preferencesData } = getFormData();
+        const userData = {
+            name: document.getElementById('name').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            phone: document.getElementById('phone').value.trim()
+        };
 
-        // Step 1: Create user account
-        console.log('Creating user account...');
+        const preferencesData = {
+            max_budget: parseFloat(document.getElementById('maxBudget').value),
+            min_size: parseFloat(document.getElementById('minSize').value),
+            location_area: [document.getElementById('locationArea').value.trim()],
+            rooms: parseInt(document.getElementById('rooms').value)
+        };
+
+        console.log('Creating user...');
         const user = await createUser(userData);
-        console.log('User created:', user);
+        showMessage(`Account created! User ID: ${user.user_id || user.id}`, 'success');
 
+        // Try creating preferences
+        await createPreferences(user.user_id || user.id, preferencesData).catch(e => console.error(e));
 
-        // Step 2: Create preferences for the user
-        console.log('Creating user preferences...');
-        const preferences = await createPreferences(user.id, preferencesData);
-        console.log('Preferences created:', preferences);
-
-        showMessage('Account created successfully! Welcome aboard! 🎉', 'success');
         form.reset();
-        
-        // Redirect to another page after successful signup
-        // setTimeout(() => {
-        //     window.location.href = '/home.html';
-        // }, 2000);
-
     } catch (error) {
-        console.error('Error during signup:', error);
+        console.error(error);
         showMessage(`Error: ${error.message}`, 'error');
     } finally {
-        // Re-enable the submit button
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create Account';
     }
 }
 
-// Add event listener when DOM is ready
-if (form) {
-    form.addEventListener('submit', handleSubmit);
-} else {
-    console.error('Sign up form not found!');
+if (form) form.addEventListener('submit', handleSubmit);
+
+
+// ---------------------------------------------------------
+// LISTINGS
+// ---------------------------------------------------------
+
+async function fetchListings() {
+    const tbody = document.getElementById('listings-body');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading listings...</td></tr>';
+
+    const minRent = document.getElementById('filter-min-rent').value;
+    const maxRent = document.getElementById('filter-max-rent').value;
+
+    let query = '?';
+    if (minRent) query += `min_rent=${minRent}&`;
+    if (maxRent) query += `max_rent=${maxRent}&`;
+
+    try {
+        const response = await fetch(`${getApiUrl('LISTINGS')}/listings${query}`);
+        if (!response.ok) throw new Error("Failed to fetch listings");
+
+        const listings = await response.json();
+        renderListings(listings);
+    } catch (error) {
+        tbody.innerHTML = `<tr><td colspan="6" class="error" style="text-align:center;">Could not load listings. Ensure the Listings Service is running on ${getApiUrl('LISTINGS')}</td></tr>`;
+        console.error(error);
+    }
+}
+
+function renderListings(listings) {
+    const tbody = document.getElementById('listings-body');
+    tbody.innerHTML = '';
+
+    if (listings.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No listings found matching your criteria.</td></tr>';
+        return;
+    }
+
+    listings.forEach(l => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${l.title}</strong></td>
+            <td>${l.num_bedrooms} Bed / ${l.num_bathrooms} Bath</td>
+            <td>${l.square_feet} sqft</td>
+            <td>${l.address.city}, ${l.address.state}</td>
+            <td class="price-cell">$${l.monthly_rent}/mo</td>
+            <td>
+                <button class="book-btn small-btn" onclick="bookListing('${l.id}')">Book</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// ---------------------------------------------------------
+// BOOKINGS
+// ---------------------------------------------------------
+
+async function bookListing(listingId) {
+    const userId = prompt("Enter your User ID to book this apartment:");
+    if (!userId) return;
+
+    try {
+        const response = await fetch(`${getApiUrl('BOOKINGS')}/bookings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: userId,
+                listing_id: listingId
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || "Booking failed");
+        }
+
+        alert("Booking Successful! Check 'My Bookings' tab.");
+    } catch (error) {
+        alert(`Booking Failed: ${error.message}`);
+    }
+}
+
+async function loadUserBookings() {
+    const userId = document.getElementById('booking-user-id').value.trim();
+    if (!userId) {
+        alert("Please enter a User ID");
+        return;
+    }
+
+    const listContainer = document.getElementById('bookings-list');
+    listContainer.innerHTML = '<p>Loading bookings...</p>';
+
+    try {
+        // 1. Get List of Bookings
+        const response = await fetch(`${getApiUrl('BOOKINGS')}/bookings/user/${userId}`);
+        const bookings = await response.json();
+
+        if (bookings.length === 0) {
+            listContainer.innerHTML = '<p>No bookings found for this user.</p>';
+            return;
+        }
+
+        listContainer.innerHTML = '';
+
+        // 2. Fetch Details for each (Client-Side Composition for richer UI)
+        // Note: The Bookings service has /bookings/{id}/details, we could use that too.
+
+        for (const b of bookings) {
+            // Get details for listing info
+            let listingTitle = "Loading...";
+            try {
+                const detailRes = await fetch(`${getApiUrl('BOOKINGS')}/bookings/${b.id}/details`);
+                const details = await detailRes.json();
+                if (details.listing_info && details.listing_info.title) {
+                    listingTitle = details.listing_info.title;
+                }
+            } catch (e) {
+                listingTitle = "Apartment (Details Unavailable)";
+            }
+
+            const item = document.createElement('div');
+            item.className = 'booking-item';
+            item.innerHTML = `
+                <div class="booking-header">
+                    <strong>Booking ID: ${b.id}</strong>
+                    <span>${new Date(b.created_at || Date.now()).toLocaleDateString()}</span>
+                </div>
+                <p><strong>Property:</strong> ${listingTitle}</p>
+                <div class="booking-actions" style="margin-top:10px;">
+                    <button onclick="deleteBooking('${b.id}')">Cancel Booking</button>
+                </div>
+            `;
+            listContainer.appendChild(item);
+        }
+
+    } catch (error) {
+        listContainer.innerHTML = `<p class="error">Error loading bookings: ${error.message}</p>`;
+    }
+}
+
+async function deleteBooking(bookingId) {
+    if (!confirm("Are you sure you want to cancel this booking?")) return;
+
+    try {
+        const response = await fetch(`${getApiUrl('BOOKINGS')}/bookings/${bookingId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            alert("Booking cancelled.");
+            loadUserBookings(); // Refresh
+        } else {
+            alert("Failed to cancel booking.");
+        }
+    } catch (error) {
+        alert("Error cancelling booking.");
+    }
 }
