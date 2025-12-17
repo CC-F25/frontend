@@ -162,7 +162,7 @@ async function fetchListings() {
     if (maxRent) query += `max_rent=${maxRent}&`;
 
     try {
-        const response = await fetch(`${getApiUrl('LISTINGS')}/listings/${query}`);
+        const response = await fetch(`${getApiUrl('LISTINGS')}/listings${query}`);
         if (!response.ok) throw new Error("Failed to fetch listings");
 
         const listings = await response.json();
