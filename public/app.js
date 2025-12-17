@@ -3,7 +3,7 @@ const CONFIG = {
     CLOUD: {
         USERS: 'https://users-microservice-258517926293.us-central1.run.app',
         BOOKINGS: 'https://bookings-microservice-258517926293.us-central1.run.app',
-        LISTINGS: 'https://apartment-listings-258517926293.us-central1.run.app',
+        LISTINGS: 'https://listings-proxy-258517926293.us-central1.run.app',
         PREFERENCES: 'https://preferences-proxy-258517926293.us-central1.run.app'
     },
     LOCAL: {
@@ -162,11 +162,11 @@ async function fetchListings() {
     if (maxRent) query += `max_rent=${maxRent}&`;
 
     try {
-        const response = await fetch(`${getApiUrl('LISTINGS')}/listings${query}`);
+        const response = await fetch(`${getApiUrl('LISTINGS')}/listings/${query}`);
         if (!response.ok) throw new Error("Failed to fetch listings");
 
         const listings = await response.json();
-        renderListings(listings);
+        renderListings(listings.items);
     } catch (error) {
         tbody.innerHTML = `<tr><td colspan="6" class="error" style="text-align:center;">Could not load listings. Ensure the Listings Service is running on ${getApiUrl('LISTINGS')}</td></tr>`;
         console.error(error);
