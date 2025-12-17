@@ -104,10 +104,24 @@
                 <button class="button small-btn" onclick="fetchListings()">Search</button>
             </div>
 
-            <div id="listings-grid" class="listings-grid">
-                <!-- Listings loaded here via JS -->
-                <p>Loading listings...</p>
+            <div class="table-container">
+                <table id="listings-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Target</th>
+                            <th>Details</th>
+                            <th>Location</th>
+                            <th>Rent</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listings-body">
+                        <!-- Rows injected here -->
+                    </tbody>
+                </table>
             </div>
+            <!-- Removed static loading text -->
         </div>
     </div>
 
@@ -131,7 +145,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=5"></script>
 </body>
 
 </html>

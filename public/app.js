@@ -151,8 +151,8 @@ if (form) form.addEventListener('submit', handleSubmit);
 // ---------------------------------------------------------
 
 async function fetchListings() {
-    const grid = document.getElementById('listings-grid');
-    grid.innerHTML = '<p>Loading listings...</p>';
+    const tbody = document.getElementById('listings-body');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading listings...</td></tr>';
 
     const minRent = document.getElementById('filter-min-rent').value;
     const maxRent = document.getElementById('filter-max-rent').value;
@@ -168,35 +168,33 @@ async function fetchListings() {
         const listings = await response.json();
         renderListings(listings);
     } catch (error) {
-        grid.innerHTML = `<p class="error">Could not load listings. Ensure the Listings Service is running on ${getApiUrl('LISTINGS')}</p>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="error" style="text-align:center;">Could not load listings. Ensure the Listings Service is running on ${getApiUrl('LISTINGS')}</td></tr>`;
         console.error(error);
     }
 }
 
 function renderListings(listings) {
-    const grid = document.getElementById('listings-grid');
-    grid.innerHTML = '';
+    const tbody = document.getElementById('listings-body');
+    tbody.innerHTML = '';
 
     if (listings.length === 0) {
-        grid.innerHTML = '<p>No listings found matching your criteria.</p>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No listings found matching your criteria.</td></tr>';
         return;
     }
 
     listings.forEach(l => {
-        const card = document.createElement('div');
-        card.className = 'listing-card';
-        card.innerHTML = `
-            <div class="listing-image">
-                <span>${l.num_bedrooms} Bed / ${l.num_bathrooms} Bath</span>
-            </div>
-            <div class="listing-details">
-                <div class="listing-price">$${l.monthly_rent}/mo</div>
-                <div class="listing-title">${l.title}</div>
-                <div class="listing-meta">${l.address.city}, ${l.address.state} • ${l.square_feet} sqft</div>
-                <button class="book-btn" onclick="bookListing('${l.id}')">Book Now</button>
-            </div>
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${l.title}</strong></td>
+            <td>${l.num_bedrooms} Bed / ${l.num_bathrooms} Bath</td>
+            <td>${l.square_feet} sqft</td>
+            <td>${l.address.city}, ${l.address.state}</td>
+            <td class="price-cell">$${l.monthly_rent}/mo</td>
+            <td>
+                <button class="book-btn small-btn" onclick="bookListing('${l.id}')">Book</button>
+            </td>
         `;
-        grid.appendChild(card);
+        tbody.appendChild(tr);
     });
 }
 
