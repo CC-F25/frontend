@@ -1,10 +1,13 @@
+let CURRENT_JWT = null; // Stores the token we get from our Users Service
+let CURRENT_USER_ID = null;
+
 // API Configuration
 const CONFIG = {
     CLOUD: {
         USERS: 'https://users-microservice-258517926293.us-central1.run.app',
         BOOKINGS: 'https://bookings-microservice-258517926293.us-central1.run.app',
-        LISTINGS: 'https://apartment-listings-258517926293.us-central1.run.app',
-        PREFERENCES: 'https://preferences-proxy-258517926293.us-central1.run.app'
+        LISTINGS: 'http://35.224.251.138:8000', 
+        PREFERENCES: 'http://34.111.137.28'
     },
     LOCAL: {
         USERS: 'http://localhost:8001',
@@ -38,14 +41,21 @@ function showSection(sectionId) {
 
     // Auto-load data if needed
     if (sectionId === 'listings') fetchListings();
+    
+    // --- NEW: Auto-load bookings if user is logged in ---
+    if (sectionId === 'bookings') {
+        if (CURRENT_USER_ID) {
+            // Ensure the input is filled (in case they refreshed or moved around)
+            document.getElementById('booking-user-id').value = CURRENT_USER_ID;
+            loadUserBookings();
+        }
+    }
 }
 
 function toggleLocalMode() {
     const isChecked = document.getElementById('localModeToggle').checked;
     currentMode = isChecked ? 'LOCAL' : 'CLOUD';
     console.log(`Switched to ${currentMode} mode.`);
-
-    // Refresh current view
     if (document.getElementById('listings-section').classList.contains('active')) {
         fetchListings();
     }
@@ -55,9 +65,6 @@ function getApiUrl(service) {
     return CONFIG[currentMode][service];
 }
 
-/**
- * Display a message to the user
- */
 function showMessage(text, type) {
     messageDiv.textContent = text;
     messageDiv.className = `message ${type}`;
@@ -66,80 +73,163 @@ function showMessage(text, type) {
 }
 
 // ---------------------------------------------------------
-// USERS & PREFERENCES (Signup)
+// AUTHENTICATION & ORCHESTRATION
 // ---------------------------------------------------------
 
-async function createUser(userData) {
-    const response = await fetch(`${getApiUrl('USERS')}/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+async function handleCredentialResponse(response) {
+    console.log("Google Token Received:", response.credential);
+
+    try {
+        const res = await fetch(`${CONFIG.CLOUD.USERS}/auth/google?google_token=${response.credential}`, {
+            method: 'POST'
+        });
+
+        if (!res.ok) throw new Error("Login Failed");
+
+        const data = await res.json();
+        
+        CURRENT_JWT = data.access_jwt;
+        CURRENT_USER_ID = data.user.id;
+
+        const bookingInput = document.getElementById('booking-user-id');
+        if (bookingInput) bookingInput.value = CURRENT_USER_ID;
+        
+        // Hide Login Button
+        document.getElementById("auth-section").style.display = "none";
+
+        // Logic to skip form if user already has phone number
+        if (data.user.phone_number) {
+            console.log("User exists. Redirecting...");
+            const subtitle = document.querySelector(".subtitle");
+            subtitle.innerHTML = `✅ <strong>Welcome back, ${data.user.name}!</strong>`;
+            subtitle.style.color = "green";
+            setTimeout(() => showSection('listings'), 1000);
+        } else {
+            console.log("New User. Showing form...");
+            const subtitle = document.querySelector(".subtitle");
+            subtitle.innerHTML = `✅ <strong>Logged in as: ${data.user.name}</strong><br>Please complete your profile below.`;
+            subtitle.style.color = "green";
+
+            // Pre-fill fields
+            document.getElementById('name').value = data.user.name;
+            document.getElementById('email').value = data.user.email;
+            
+            // Pre-fill optional fields if they exist
+            document.getElementById('location').value = data.user.location || '';
+            document.getElementById('bio').value = data.user.bio || '';
+
+            const form = document.getElementById('signupForm');
+            form.style.display = 'block';
+            setTimeout(() => { form.style.opacity = '1'; }, 10);
+        }
+
+    } catch (error) {
+        console.error("Auth Error:", error);
+        alert("Login failed.");
+    }
+}
+window.handleCredentialResponse = handleCredentialResponse;
+
+// ---------------------------------------------------------
+// PROFILE UPDATES (Identity + Preferences)
+// ---------------------------------------------------------
+
+async function updateUser(userId, userData) {
+    const response = await fetch(`${getApiUrl('USERS')}/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${CURRENT_JWT}`
+        },
         body: JSON.stringify({
             name: userData.name,
-            email: userData.email,
             phone_number: userData.phone,
-            housing_preference: "apartment",
-            listing_group: "other"
+            bio: userData.bio,
+            location: userData.location
         })
     });
 
     if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.detail || 'Failed to create user');
+        const errorMessage = typeof error.detail === 'object' 
+            ? JSON.stringify(error.detail) 
+            : (error.detail || 'Failed to update user');
+        throw new Error(errorMessage);
     }
     return response.json();
 }
 
-async function createPreferences(userId, preferencesData) {
-    // Note: Preferences API logic varies slightly between services, adapting to standard
-    const response = await fetch(`${getApiUrl('PREFERENCES')}/preferences`, {
+async function createPreferences(userId, prefData) {
+    const response = await fetch(`${getApiUrl('PREFERENCES')}/user-preferences`, { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             user_id: userId,
-            ...preferencesData
+            max_budget: parseInt(prefData.maxBudget),
+            min_size: parseInt(prefData.minSize),
+            rooms: parseInt(prefData.rooms),
+            location_area: [prefData.locationArea] 
         })
     });
 
     if (!response.ok) {
-        // Preferences failures shouldn't block the UI flow entirely, but alert needs to show
-        console.warn("Preferences creation failed");
+        const error = await response.json();
+        const errorMessage = typeof error.detail === 'object' 
+            ? JSON.stringify(error.detail) 
+            : (error.detail || 'Failed to create preferences');
+        console.warn("Preferences Error:", errorMessage);
+        throw new Error("Preferences: " + errorMessage);
     }
     return response.json();
 }
 
 async function handleSubmit(e) {
     e.preventDefault();
+    
+    if (!CURRENT_JWT || !CURRENT_USER_ID) {
+        alert("Please login with Google first.");
+        return;
+    }
+
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Creating Account...';
+    submitBtn.textContent = 'Saving...';
 
     try {
+        // 1. Prepare User Data (Identity -> Users Service)
         const userData = {
             name: document.getElementById('name').value.trim(),
             email: document.getElementById('email').value.trim(),
-            phone: document.getElementById('phone').value.trim()
+            phone: document.getElementById('phone').value.trim(),
+            location: document.getElementById('location').value.trim(),
+            bio: document.getElementById('bio').value.trim()
         };
 
+        // 2. Prepare Preferences Data (Criteria -> Preferences Service)
         const preferencesData = {
-            max_budget: parseFloat(document.getElementById('maxBudget').value),
-            min_size: parseFloat(document.getElementById('minSize').value),
-            location_area: [document.getElementById('locationArea').value.trim()],
-            rooms: parseInt(document.getElementById('rooms').value)
+            maxBudget: document.getElementById('maxBudget').value,
+            minSize: document.getElementById('minSize').value,
+            rooms: document.getElementById('rooms').value,
+            locationArea: document.getElementById('prefLocation').value.trim()
         };
 
-        console.log('Creating user...');
-        const user = await createUser(userData);
-        showMessage(`Account created! User ID: ${user.user_id || user.id}`, 'success');
+        console.log('Orchestrating split write...');
+        
+        // Step A: Update Identity
+        await updateUser(CURRENT_USER_ID, userData);
 
-        // Try creating preferences
-        await createPreferences(user.user_id || user.id, preferencesData).catch(e => console.error(e));
+        // Step B: Create Criteria
+        await createPreferences(CURRENT_USER_ID, preferencesData);
 
-        form.reset();
+        showMessage('Profile saved successfully!', 'success');
+        
+        setTimeout(() => showSection('listings'), 1500);
+
     } catch (error) {
         console.error(error);
         showMessage(`Error: ${error.message}`, 'error');
     } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Account';
+        submitBtn.textContent = 'Save Profile & Continue';
     }
 }
 
@@ -166,7 +256,9 @@ async function fetchListings() {
         if (!response.ok) throw new Error("Failed to fetch listings");
 
         const listings = await response.json();
-        renderListings(listings);
+        // Handle pagination response format { items: [], total: ... }
+        const items = Array.isArray(listings) ? listings : (listings.items || []);
+        renderListings(items);
     } catch (error) {
         tbody.innerHTML = `<tr><td colspan="6" class="error" style="text-align:center;">Could not load listings. Ensure the Listings Service is running on ${getApiUrl('LISTINGS')}</td></tr>`;
         console.error(error);
@@ -203,27 +295,40 @@ function renderListings(listings) {
 // ---------------------------------------------------------
 
 async function bookListing(listingId) {
-    const userId = prompt("Enter your User ID to book this apartment:");
-    if (!userId) return;
+    if (!CURRENT_JWT) {
+        alert("You must Sign In with Google first!");
+        return;
+    }
+
+    const dateStr = prompt("Enter booking date (YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
+    if (!dateStr) return;
+
+    const payload = {
+        user_id: CURRENT_USER_ID,
+        listing_id: listingId,
+        booking_date: new Date(dateStr).toISOString()
+    };
 
     try {
-        const response = await fetch(`${getApiUrl('BOOKINGS')}/bookings`, {
+        const response = await fetch(`${CONFIG.CLOUD.BOOKINGS}/bookings`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                user_id: userId,
-                listing_id: listingId
-            })
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${CURRENT_JWT}` 
+            },
+            body: JSON.stringify(payload)
         });
 
-        if (!response.ok) {
+        if (response.ok) {
+            const data = await response.json();
+            alert(`Booking Successful! ID: ${data.id}`);
+        } else {
             const err = await response.json();
-            throw new Error(err.detail || "Booking failed");
+            alert(`Booking Failed: ${JSON.stringify(err)}`);
         }
-
-        alert("Booking Successful! Check 'My Bookings' tab.");
     } catch (error) {
-        alert(`Booking Failed: ${error.message}`);
+        console.error("Booking Error:", error);
+        alert("Network error.");
     }
 }
 
@@ -238,7 +343,6 @@ async function loadUserBookings() {
     listContainer.innerHTML = '<p>Loading bookings...</p>';
 
     try {
-        // 1. Get List of Bookings
         const response = await fetch(`${getApiUrl('BOOKINGS')}/bookings/user/${userId}`);
         const bookings = await response.json();
 
@@ -249,11 +353,7 @@ async function loadUserBookings() {
 
         listContainer.innerHTML = '';
 
-        // 2. Fetch Details for each (Client-Side Composition for richer UI)
-        // Note: The Bookings service has /bookings/{id}/details, we could use that too.
-
         for (const b of bookings) {
-            // Get details for listing info
             let listingTitle = "Loading...";
             try {
                 const detailRes = await fetch(`${getApiUrl('BOOKINGS')}/bookings/${b.id}/details`);
@@ -295,7 +395,7 @@ async function deleteBooking(bookingId) {
 
         if (response.ok) {
             alert("Booking cancelled.");
-            loadUserBookings(); // Refresh
+            loadUserBookings(); 
         } else {
             alert("Failed to cancel booking.");
         }

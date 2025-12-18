@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <head>
     <meta charset="UTF-8">
@@ -9,7 +10,6 @@
 </head>
 
 <body>
-    <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="nav-brand">Apartments</div>
         <div class="nav-links">
@@ -26,33 +26,59 @@
         </div>
     </nav>
 
-    <!-- HOME SECTION (Signup) -->
     <div id="home-section" class="section active">
         <div class="container">
-            <h1>Create Your Account</h1>
-            <p class="subtitle">Find your perfect apartment with personalized preferences</p>
+            <h1>Welcome to Apartments</h1>
+            <p class="subtitle" id="login-subtitle">Please Sign In to start booking</p>
 
-            <form id="signupForm">
-                <!-- Basic Information -->
+            <div id="auth-section" style="margin-bottom: 30px; padding: 20px; border: 1px dashed #ccc; text-align: center;">
+                <div id="g_id_onload"
+                     data-client_id="258517926293-f4tlnulrid7ejrg0b9j8d3p8infshrhv.apps.googleusercontent.com"
+                     data-callback="handleCredentialResponse"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-size="large"
+                     data-theme="filled_blue"
+                     data-text="sign_in_with"
+                     data-shape="rectangular"
+                     data-logo_alignment="left">
+                </div>
+                <p id="auth-status" style="margin-top: 10px; font-weight: bold;"></p>
+            </div>
+
+            <form id="signupForm" style="display: none; opacity: 0; transition: opacity 0.5s;">
+                <h2 style="border-bottom: 2px solid #6c5ce7; padding-bottom: 10px; margin-bottom: 20px;">Complete Your Profile</h2>
+                
+                <h3 style="margin-top: 0; color: #555;">Identity</h3>
                 <div class="form-group">
-                    <label for="name">Full Name <span class="required">*</span></label>
-                    <input type="text" id="name" name="name" required placeholder="Enter your name">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" readonly style="background-color: #f0f0f0; cursor: not-allowed;">
                 </div>
 
                 <div class="form-group">
-                    <label for="email">Email <span class="required">*</span></label>
-                    <input type="email" id="email" name="email" required placeholder="email@example.com">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" readonly style="background-color: #f0f0f0; cursor: not-allowed;">
                 </div>
 
                 <div class="form-group">
                     <label for="phone">Phone Number <span class="required">*</span></label>
                     <input type="tel" id="phone" name="phone" required placeholder="+1 (555) 123-4567">
-                    <p class="helper-text">Include country code</p>
                 </div>
 
-                <!-- Preferences Section -->
-                <div class="preferences-section">
-                    <h2>Apartment Preferences</h2>
+                <div class="form-group">
+                    <label for="location">Current City</label>
+                    <input type="text" id="location" name="location" placeholder="e.g. New York, NY">
+                </div>
+
+                <div class="form-group">
+                    <label for="bio">Bio / About Me</label>
+                    <textarea id="bio" name="bio" rows="2" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Student at Columbia..."></textarea>
+                </div>
+
+                <div class="preferences-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed #ccc;">
+                    <h3 style="margin-top: 0; color: #555;">Apartment Preferences</h3>
 
                     <div class="form-group">
                         <label for="maxBudget">Maximum Budget ($/month) <span class="required">*</span></label>
@@ -79,20 +105,18 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="locationArea">Preferred Location <span class="required">*</span></label>
-                        <input type="text" id="locationArea" name="locationArea" required
-                            placeholder="Downtown, Brooklyn, etc.">
+                        <label for="prefLocation">Preferred Neighborhoods <span class="required">*</span></label>
+                        <input type="text" id="prefLocation" name="prefLocation" required placeholder="Downtown, Brooklyn, etc.">
                     </div>
                 </div>
 
-                <button type="submit" class="button" id="submitBtn">Create Account</button>
+                <button type="submit" class="button" id="submitBtn" style="margin-top: 20px;">Save Profile & Continue</button>
             </form>
 
             <div id="message" class="message"></div>
         </div>
     </div>
 
-    <!-- LISTINGS SECTION -->
     <div id="listings-section" class="section">
         <div class="container wide-container">
             <h1>Available Apartments</h1>
@@ -117,15 +141,12 @@
                         </tr>
                     </thead>
                     <tbody id="listings-body">
-                        <!-- Rows injected here -->
                     </tbody>
                 </table>
             </div>
-            <!-- Removed static loading text -->
         </div>
     </div>
 
-    <!-- BOOKINGS SECTION -->
     <div id="bookings-section" class="section">
         <div class="container">
             <h1>My Bookings</h1>
@@ -140,12 +161,10 @@
             </div>
 
             <div id="bookings-list" class="bookings-list">
-                <!-- Bookings loaded here via JS -->
             </div>
         </div>
     </div>
 
-    <script src="app.js?v=5"></script>
+    <script src="app.js?v=7"></script>
 </body>
-
 </html>
