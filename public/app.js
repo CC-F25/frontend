@@ -42,7 +42,7 @@ function showSection(sectionId) {
     // Auto-load data if needed
     if (sectionId === 'listings') fetchListings();
     
-    // --- NEW: Auto-load bookings if user is logged in ---
+    // Auto-load bookings if user is logged in
     if (sectionId === 'bookings') {
         if (CURRENT_USER_ID) {
             // Ensure the input is filled (in case they refreshed or moved around)
@@ -195,7 +195,7 @@ async function handleSubmit(e) {
     submitBtn.textContent = 'Saving...';
 
     try {
-        // 1. Prepare User Data (Identity -> Users Service)
+        // Prepare User Data (Identity -> Users Service)
         const userData = {
             name: document.getElementById('name').value.trim(),
             email: document.getElementById('email').value.trim(),
@@ -204,7 +204,7 @@ async function handleSubmit(e) {
             bio: document.getElementById('bio').value.trim()
         };
 
-        // 2. Prepare Preferences Data (Criteria -> Preferences Service)
+        // Prepare Preferences Data (Criteria -> Preferences Service)
         const preferencesData = {
             maxBudget: document.getElementById('maxBudget').value,
             minSize: document.getElementById('minSize').value,
@@ -214,10 +214,10 @@ async function handleSubmit(e) {
 
         console.log('Orchestrating split write...');
         
-        // Step A: Update Identity
+        // Update Identity
         await updateUser(CURRENT_USER_ID, userData);
 
-        // Step B: Create Criteria
+        // Create Criteria
         await createPreferences(CURRENT_USER_ID, preferencesData);
 
         showMessage('Profile saved successfully!', 'success');
