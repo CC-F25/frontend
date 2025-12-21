@@ -1,5 +1,6 @@
-let CURRENT_JWT = null; // Stores the token we get from our Users Service
-let CURRENT_USER_ID = null;
+// Check Local Storage first, otherwise default to null
+let CURRENT_JWT = localStorage.getItem('apartment_jwt') || null;
+let CURRENT_USER_ID = localStorage.getItem('apartment_user_id') || null;
 
 // API Configuration
 const CONFIG = {
@@ -33,8 +34,8 @@ function showSection(sectionId) {
     // Show target section
     document.getElementById(`${sectionId}-section`).classList.add('active');
 
-    // Activate nav item
-    const navIndex = ['home', 'listings', 'bookings'].indexOf(sectionId);
+    // Activate nav item 
+    const navIndex = ['home', 'listings', 'bookings', 'profile'].indexOf(sectionId);
     if (navIndex >= 0) {
         document.querySelectorAll('.nav-item')[navIndex].classList.add('active');
     }
@@ -49,6 +50,11 @@ function showSection(sectionId) {
             document.getElementById('booking-user-id').value = CURRENT_USER_ID;
             loadUserBookings();
         }
+    }
+
+    // Load Profile logic
+    if (sectionId === 'profile') {
+        loadUserProfile();
     }
 }
 
@@ -91,6 +97,11 @@ async function handleCredentialResponse(response) {
         CURRENT_JWT = data.access_jwt;
         CURRENT_USER_ID = data.user.id;
 
+
+        // Save to Local Storage so refresh doesn't log us out
+        localStorage.setItem('apartment_jwt', CURRENT_JWT);
+        localStorage.setItem('apartment_user_id', CURRENT_USER_ID);
+
         const bookingInput = document.getElementById('booking-user-id');
         if (bookingInput) bookingInput.value = CURRENT_USER_ID;
         
@@ -129,6 +140,41 @@ async function handleCredentialResponse(response) {
     }
 }
 window.handleCredentialResponse = handleCredentialResponse;
+
+
+// ---------------------------------------------------------
+// INITIALIZATION (Run on Page Load)
+// ---------------------------------------------------------
+
+function checkAuthOnLoad() {
+    // If we have a token in memory (loaded from LocalStorage at top of file)
+    if (CURRENT_JWT && CURRENT_USER_ID) {
+        console.log("Restoring session...");
+
+        // Hide the Google Login Box
+        const authSection = document.getElementById("auth-section");
+        if (authSection) authSection.style.display = "none";
+
+        // Update the Welcome Message
+        const subtitle = document.querySelector(".subtitle");
+        if (subtitle) {
+            subtitle.innerHTML = `✅ <strong>Welcome back!</strong>`;
+            subtitle.style.color = "green";
+        }
+
+        // Pre-fill the Booking Input (Critical for booking logic)
+        const bookingInput = document.getElementById('booking-user-id');
+        if (bookingInput) bookingInput.value = CURRENT_USER_ID;
+
+        // Automatically switch to the Listings tab so they don't see the empty Home page
+        // Only do this if we are currently on the 'home' section (default)
+        if (document.getElementById('home-section').classList.contains('active')) {
+            showSection('listings');
+        }
+    }
+}
+
+checkAuthOnLoad();
 
 // ---------------------------------------------------------
 // PROFILE UPDATES (Identity + Preferences)
@@ -324,7 +370,11 @@ async function bookListing(listingId) {
             alert(`Booking Successful! ID: ${data.id}`);
         } else {
             const err = await response.json();
-            alert(`Booking Failed: ${JSON.stringify(err)}`);
+            if (response.status === 409) {
+                alert(`UNAVAILABLE: ${err.detail}`); 
+            } else {
+                alert(`Booking Failed: ${JSON.stringify(err)}`);
+            }
         }
     } catch (error) {
         console.error("Booking Error:", error);
@@ -402,4 +452,47 @@ async function deleteBooking(bookingId) {
     } catch (error) {
         alert("Error cancelling booking.");
     }
+}
+
+
+async function loadUserProfile() {
+    const content = document.getElementById('profile-content');
+    const loading = document.getElementById('profile-loading');
+
+    if (!CURRENT_USER_ID || !CURRENT_JWT) {
+        content.style.display = 'none';
+        loading.innerHTML = 'Please <a href="#" onclick="showSection(\'home\')">Sign In</a> to view your profile.';
+        loading.style.display = 'block';
+        return;
+    }
+
+    loading.textContent = 'Loading profile...';
+    
+    try {
+        const response = await fetch(`${getApiUrl('USERS')}/users/${CURRENT_USER_ID}`);
+        if (!response.ok) throw new Error("Failed to load profile");
+        
+        const user = await response.json();
+
+        document.getElementById('profile-name').textContent = user.name;
+        document.getElementById('profile-email').textContent = user.email;
+        document.getElementById('profile-phone').textContent = user.phone_number || 'N/A';
+        document.getElementById('profile-location').textContent = user.location || 'N/A';
+        document.getElementById('profile-bio').textContent = user.bio || 'N/A';
+
+        loading.style.display = 'none';
+        content.style.display = 'block';
+    } catch (error) {
+        loading.textContent = 'Error loading profile. System might be down.';
+        console.error(error);
+    }
+}
+
+function logout() {
+    // Clear storage
+    localStorage.removeItem('apartment_jwt');
+    localStorage.removeItem('apartment_user_id');
+    
+    // Refresh page to reset state
+    window.location.reload();
 }

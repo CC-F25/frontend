@@ -13,11 +13,13 @@
     <nav class="navbar">
         <div class="nav-brand">Apartments</div>
         <div class="nav-links">
-            <button class="nav-item active" onclick="showSection('home')">Sign Up</button>
+            <button class="nav-item active" onclick="showSection('home')">Home</button>
             <button class="nav-item" onclick="showSection('listings')">Listings</button>
             <button class="nav-item" onclick="showSection('bookings')">My Bookings</button>
+            <button class="nav-item" onclick="showSection('profile')">My Profile</button>
+            <button class="nav-item" onclick="logout()">Sign Out</button>
         </div>
-        <div class="nav-controls">
+             <div class="nav-controls">
             <label class="toggle-switch">
                 <input type="checkbox" id="localModeToggle" onchange="toggleLocalMode()">
                 <span class="slider"></span>
@@ -63,7 +65,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="phone">Phone Number <span class="required">*</span></label>
+                    <label for="phone">Phone Number (add '+ country code' in the beginning) <span class="required">*</span></label>
                     <input type="tel" id="phone" name="phone" required placeholder="+1 (555) 123-4567">
                 </div>
 
@@ -162,6 +164,24 @@
 
             <div id="bookings-list" class="bookings-list">
             </div>
+        </div>
+    </div>
+
+    <div id="profile-section" class="section">
+        <div class="container">
+            <h1>My Profile</h1>
+            <div id="profile-content" class="profile-card" style="display:none;">
+                <div class="profile-header">
+                    <h2 id="profile-name">User Name</h2>
+                    <p id="profile-email">email@example.com</p>
+                </div>
+                <div class="profile-details">
+                    <p><strong>Phone:</strong> <span id="profile-phone">-</span></p>
+                    <p><strong>Location:</strong> <span id="profile-location">-</span></p>
+                    <p><strong>Bio:</strong> <span id="profile-bio">-</span></p>
+                </div>
+            </div>
+            <div id="profile-loading">Please log in to view your profile.</div>
         </div>
     </div>
 
