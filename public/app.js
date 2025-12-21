@@ -6,8 +6,8 @@ const CONFIG = {
     CLOUD: {
         USERS: 'https://users-microservice-258517926293.us-central1.run.app',
         BOOKINGS: 'https://bookings-microservice-258517926293.us-central1.run.app',
-        LISTINGS: 'https://listings-proxy-258517926293.us-central1.run.app/',
-        PREFERENCES: 'https://preferences-proxy-258517926293.us-central1.run.app/'
+        LISTINGS: 'https://listings-proxy-258517926293.us-central1.run.app',
+        PREFERENCES: 'https://preferences-proxy-258517926293.us-central1.run.app'
     },
     LOCAL: {
         USERS: 'http://localhost:8001',
