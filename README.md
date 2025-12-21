@@ -95,3 +95,13 @@ The setup uses local SQLite files (`users.db`, `bookings.db`, etc.). To complete
 1.  Stop the services.
 2.  Delete the `.db` files: `rm *.db`
 3.  Run `./start_local_env.sh` again.
+
+
+
+# Firebase deployment
+
+Use either function inside the project folder
+`firebase deploy`
+OR
+
+`firebase deploy --only hosting`
