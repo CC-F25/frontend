@@ -420,7 +420,7 @@ async function loadUserBookings() {
             item.innerHTML = `
                 <div class="booking-header">
                     <strong>Booking ID: ${b.id}</strong>
-                    <span>${new Date(b.created_at || Date.now()).toLocaleDateString()}</span>
+                    <span>Booked for: ${new Date(b.booking_date).toLocaleDateString()}</span>
                 </div>
                 <p><strong>Property:</strong> ${listingTitle}</p>
                 <div class="booking-actions" style="margin-top:10px;">
